@@ -3,111 +3,95 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
-# -------------------------------------------------------
-# Page setup
-# -------------------------------------------------------
 st.set_page_config(
-    page_title="Live Interactive Straight Line Graph",
+    page_title="Interactive Straight Line Graph",
     page_icon="📈",
     layout="wide"
 )
 
-# -------------------------------------------------------
-# CSS: infographic style
-# -------------------------------------------------------
 st.markdown("""
 <style>
 .main {
-    background: linear-gradient(135deg, #eef7ff 0%, #fff7ed 100%);
+    background: linear-gradient(135deg, #f0f9ff, #fff7ed);
 }
-
 .title-box {
-    background: linear-gradient(90deg, #0f766e, #2563eb);
-    padding: 26px;
+    background: linear-gradient(90deg,#0f766e,#2563eb);
+    padding: 24px;
     border-radius: 24px;
     color: white;
     text-align: center;
-    box-shadow: 0px 8px 25px rgba(0,0,0,0.12);
     margin-bottom: 18px;
 }
-
-.title-box h1 {
-    font-size: 42px;
-    margin-bottom: 5px;
-}
-
 .card {
-    background-color: white;
+    background: white;
     padding: 20px;
-    border-radius: 22px;
-    box-shadow: 0px 6px 18px rgba(0,0,0,0.08);
-    margin-bottom: 18px;
+    border-radius: 20px;
+    box-shadow: 0px 5px 18px rgba(0,0,0,0.10);
+    margin-bottom: 16px;
 }
-
-.formula-card {
+.equation-box {
     background: linear-gradient(135deg, #fff7ed, #ffffff);
     padding: 22px;
     border-radius: 22px;
-    box-shadow: 0px 6px 18px rgba(0,0,0,0.08);
+    box-shadow: 0px 5px 18px rgba(0,0,0,0.10);
     border-left: 8px solid #f97316;
     text-align: center;
+    margin-bottom: 16px;
 }
-
-.note-card {
-    background: #f0fdf4;
-    padding: 18px;
-    border-radius: 18px;
-    border-left: 8px solid #22c55e;
-    margin-bottom: 14px;
+.equation-line {
+    font-size: 34px;
+    font-weight: 800;
+    color: #0f172a;
+    white-space: nowrap;
+}
+.small-note {
+    font-size: 16px;
+    color: #475569;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# -------------------------------------------------------
-# Header
-# -------------------------------------------------------
 st.markdown("""
 <div class="title-box">
-    <h1>📈 Live Straight Line Graph</h1>
-    <p>Move the gradient and y-intercept sliders. The graph changes instantly.</p>
+<h1>📈 Interactive Straight Line Graph</h1>
+<p>Move the controls and watch the graph change instantly</p>
 </div>
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------
-# Sidebar controls
-# Streamlit automatically reruns the app whenever a widget changes.
-# This creates simultaneous/live updates.
+# Sidebar Controls
+# Streamlit reruns automatically whenever these values change.
+# This makes the graph move simultaneously with the slider/dial.
 # -------------------------------------------------------
-st.sidebar.header("🎛️ Live Control Panel")
+st.sidebar.header("🎛️ Interactive Controls")
 
 m = st.sidebar.slider(
     "Gradient, m",
     min_value=-10.0,
     max_value=10.0,
     value=2.0,
-    step=0.1,
-    help="Change this to make the line steeper, flatter, rising, or falling."
+    step=0.1
 )
 
 c = st.sidebar.slider(
     "Y-intercept, c",
-    min_value=-20.0,
-    max_value=20.0,
+    min_value=-10.0,
+    max_value=10.0,
     value=1.0,
-    step=0.1,
-    help="Change this to move the line up or down."
+    step=0.1
 )
 
 st.sidebar.subheader("📏 Adjustable Axis")
 
-x_axis_min = st.sidebar.number_input("X-axis minimum", value=-10.0, step=1.0)
-x_axis_max = st.sidebar.number_input("X-axis maximum", value=10.0, step=1.0)
-y_axis_min = st.sidebar.number_input("Y-axis minimum", value=-10.0, step=1.0)
-y_axis_max = st.sidebar.number_input("Y-axis maximum", value=10.0, step=1.0)
+x_axis_min = st.sidebar.number_input("X-axis minimum", value=-10, step=1)
+x_axis_max = st.sidebar.number_input("X-axis maximum", value=10, step=1)
+
+y_axis_min = st.sidebar.number_input("Y-axis minimum", value=-10, step=1)
+y_axis_max = st.sidebar.number_input("Y-axis maximum", value=10, step=1)
 
 show_grid = st.sidebar.checkbox("Show grid", value=True)
 show_points = st.sidebar.checkbox("Show sample points", value=True)
-show_y_intercept = st.sidebar.checkbox("Highlight y-intercept", value=True)
+show_intercept = st.sidebar.checkbox("Show y-intercept", value=True)
 
 if x_axis_min >= x_axis_max:
     st.error("X-axis minimum must be smaller than X-axis maximum.")
@@ -123,120 +107,107 @@ if y_axis_min >= y_axis_max:
 x = np.linspace(x_axis_min, x_axis_max, 500)
 y = m * x + c
 
+# Equation formatting
+if c > 0:
+    equation = f"y = {m:g}x + {c:g}"
+elif c < 0:
+    equation = f"y = {m:g}x - {abs(c):g}"
+else:
+    equation = f"y = {m:g}x"
+
 # -------------------------------------------------------
 # Layout
 # -------------------------------------------------------
-left, right = st.columns([2.2, 1])
+left, right = st.columns([2.25, 1])
 
 with left:
-    graph_placeholder = st.empty()
+    fig, ax = plt.subplots(figsize=(10, 7))
 
-    with graph_placeholder.container():
-        fig, ax = plt.subplots(figsize=(11, 7))
+    ax.plot(x, y, linewidth=4, label=equation)
 
-        ax.plot(
-            x,
-            y,
-            linewidth=4,
-            label=f"y = {m:.1f}x + {c:.1f}"
+    ax.axhline(0, linewidth=1.4)
+    ax.axvline(0, linewidth=1.4)
+
+    if show_grid:
+        ax.grid(True, linestyle="--", alpha=0.45)
+
+    if show_intercept:
+        ax.scatter([0], [c], s=160, zorder=5)
+        ax.annotate(
+            f"y-intercept: {c:g}",
+            xy=(0, c),
+            xytext=(1, c + 1),
+            arrowprops=dict(arrowstyle="->", lw=2),
+            fontsize=11,
+            bbox=dict(boxstyle="round,pad=0.35", fc="white", ec="gray", alpha=0.9)
         )
 
-        # x-axis and y-axis
-        ax.axhline(0, linewidth=1.4)
-        ax.axvline(0, linewidth=1.4)
+    if show_points:
+        sample_x = np.array([-2, -1, 0, 1, 2])
+        sample_y = m * sample_x + c
+        ax.scatter(sample_x, sample_y, s=75, zorder=4)
 
-        if show_grid:
-            ax.grid(True, linestyle="--", alpha=0.45)
-
-        # y-intercept marker
-        if show_y_intercept and y_axis_min <= c <= y_axis_max:
-            ax.scatter([0], [c], s=180, zorder=5)
-            ax.annotate(
-                f"y-intercept = {c:.1f}",
-                xy=(0, c),
-                xytext=(1, c + 1),
-                arrowprops=dict(arrowstyle="->", lw=2),
-                fontsize=12,
-                bbox=dict(boxstyle="round,pad=0.4", fc="white", ec="gray", alpha=0.9)
-            )
-
-        # sample coordinate points
-        if show_points:
-            sample_x = np.array([-2, -1, 0, 1, 2])
-            sample_y = m * sample_x + c
-
-            visible = (
-                (sample_x >= x_axis_min) &
-                (sample_x <= x_axis_max) &
-                (sample_y >= y_axis_min) &
-                (sample_y <= y_axis_max)
-            )
-
-            ax.scatter(sample_x[visible], sample_y[visible], s=90, zorder=4)
-
-            for px, py in zip(sample_x[visible], sample_y[visible]):
+        for px, py in zip(sample_x, sample_y):
+            if y_axis_min <= py <= y_axis_max and x_axis_min <= px <= x_axis_max:
                 ax.annotate(
-                    f"({px:g}, {py:.1f})",
+                    f"({px:g}, {py:g})",
                     (px, py),
                     textcoords="offset points",
                     xytext=(8, 8),
                     fontsize=10
                 )
 
-        ax.set_xlim(x_axis_min, x_axis_max)
-        ax.set_ylim(y_axis_min, y_axis_max)
+    ax.set_xlim(x_axis_min, x_axis_max)
+    ax.set_ylim(y_axis_min, y_axis_max)
 
-        ax.set_title("Graph of y = mx + c", fontsize=21, fontweight="bold", pad=15)
-        ax.set_xlabel("x-axis", fontsize=14)
-        ax.set_ylabel("y-axis", fontsize=14)
-        ax.legend(fontsize=13, loc="best")
+    ax.set_title("Live Straight Line Graph", fontsize=20, fontweight="bold")
+    ax.set_xlabel("x-axis", fontsize=13)
+    ax.set_ylabel("y-axis", fontsize=13)
+    ax.legend(fontsize=12)
 
-        st.pyplot(fig, clear_figure=True)
+    st.pyplot(fig, clear_figure=True)
 
 with right:
     st.markdown(f"""
-    <div class="formula-card">
-        <h2>Current Equation</h2>
-        <h1>y = {m:.1f}x + {c:.1f}</h1>
-    </div>
-    """, unsafe_allow_html=True)
-
-    if m > 0:
-        gradient_note = "The line rises from left to right."
-    elif m < 0:
-        gradient_note = "The line falls from left to right."
-    else:
-        gradient_note = "The line is horizontal."
-
-    st.markdown(f"""
-    <div class="note-card">
-        <h3>🔍 Live Interpretation</h3>
-        <p><b>Gradient:</b> {m:.1f}</p>
-        <p>{gradient_note}</p>
-        <p><b>Y-intercept:</b> {c:.1f}</p>
-        <p>The line crosses the y-axis at <b>{c:.1f}</b>.</p>
+    <div class="equation-box">
+        <div class="small-note">Current straight line equation</div>
+        <div class="equation-line">{equation}</div>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown(f"""
     <div class="card">
-        <h3>📏 Axis Range</h3>
-        <p><b>X-axis:</b> {x_axis_min:g} to {x_axis_max:g}</p>
-        <p><b>Y-axis:</b> {y_axis_min:g} to {y_axis_max:g}</p>
+        <h3>📌 Values</h3>
+        <p><b>Gradient, m:</b> {m:g}</p>
+        <p><b>Y-intercept, c:</b> {c:g}</p>
+        <p><b>X-axis:</b> {x_axis_min} to {x_axis_max}</p>
+        <p><b>Y-axis:</b> {y_axis_min} to {y_axis_max}</p>
     </div>
     """, unsafe_allow_html=True)
 
-st.markdown("---")
+    if m > 0:
+        direction = "The line rises from left to right."
+    elif m < 0:
+        direction = "The line falls from left to right."
+    else:
+        direction = "The line is horizontal."
+
+    st.markdown(f"""
+    <div class="card">
+        <h3>🧠 What changed?</h3>
+        <p>{direction}</p>
+        <p>The bigger the size of <b>m</b>, the steeper the line becomes.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.markdown("""
 <div class="card">
-    <h2>🎯 Student Challenge</h2>
-    <ol>
-        <li>Make a line with positive gradient and y-intercept 3.</li>
-        <li>Make a line with negative gradient and y-intercept -2.</li>
-        <li>Make a horizontal line crossing the y-axis at 5.</li>
-        <li>Change only the gradient. What happens to the steepness?</li>
-        <li>Change only the y-intercept. What happens to the position of the line?</li>
-    </ol>
+<h2>🎯 Student Task</h2>
+<p>Adjust the gradient and y-intercept to create:</p>
+<ol>
+<li>A line that rises and crosses the y-axis at 3.</li>
+<li>A line that falls and crosses the y-axis at -2.</li>
+<li>A horizontal line that crosses the y-axis at 5.</li>
+</ol>
 </div>
 """, unsafe_allow_html=True)
