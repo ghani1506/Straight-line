@@ -1,7 +1,7 @@
 
 import streamlit as st
 import numpy as np
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 
 st.set_page_config(
     page_title="Interactive Straight Line Graph",
@@ -14,20 +14,26 @@ st.markdown("""
 .main {
     background: linear-gradient(135deg, #f0f9ff, #fff7ed);
 }
+.block-container {
+    padding-top: 1.2rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
 .title-box {
     background: linear-gradient(90deg,#0f766e,#2563eb);
-    padding: 24px;
+    padding: 20px;
     border-radius: 24px;
     color: white;
     text-align: center;
-    margin-bottom: 18px;
+    margin-bottom: 12px;
 }
-.card {
-    background: white;
-    padding: 20px;
-    border-radius: 20px;
-    box-shadow: 0px 5px 18px rgba(0,0,0,0.10);
-    margin-bottom: 16px;
+.title-box h1 {
+    font-size: 38px;
+    margin-bottom: 3px;
+}
+.title-box p {
+    font-size: 17px;
+    margin: 0;
 }
 .equation-box {
     background: linear-gradient(135deg, #fff7ed, #ffffff);
@@ -44,6 +50,13 @@ st.markdown("""
     color: #0f172a;
     white-space: nowrap;
 }
+.card {
+    background: white;
+    padding: 18px;
+    border-radius: 20px;
+    box-shadow: 0px 5px 18px rgba(0,0,0,0.10);
+    margin-bottom: 16px;
+}
 .small-note {
     font-size: 16px;
     color: #475569;
@@ -54,14 +67,12 @@ st.markdown("""
 st.markdown("""
 <div class="title-box">
 <h1>📈 Interactive Straight Line Graph</h1>
-<p>Move the controls and watch the graph change instantly</p>
+<p>Move the sliders to see the straight line change instantly</p>
 </div>
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------
-# Sidebar Controls
-# Streamlit reruns automatically whenever these values change.
-# This makes the graph move simultaneously with the slider/dial.
+# Sidebar controls
 # -------------------------------------------------------
 st.sidebar.header("🎛️ Interactive Controls")
 
@@ -102,12 +113,11 @@ if y_axis_min >= y_axis_max:
     st.stop()
 
 # -------------------------------------------------------
-# Graph data
+# Data
 # -------------------------------------------------------
 x = np.linspace(x_axis_min, x_axis_max, 500)
 y = m * x + c
 
-# Equation formatting
 if c > 0:
     equation = f"y = {m:g}x + {c:g}"
 elif c < 0:
@@ -116,61 +126,91 @@ else:
     equation = f"y = {m:g}x"
 
 # -------------------------------------------------------
-# Layout
+# Main layout: bigger graph
 # -------------------------------------------------------
-left, right = st.columns([2.25, 1])
+left, right = st.columns([3.7, 1])
 
 with left:
-    fig, ax = plt.subplots(figsize=(10, 7))
+    fig = go.Figure()
 
-    ax.plot(x, y, linewidth=4, label=equation)
-
-    ax.axhline(0, linewidth=1.4)
-    ax.axvline(0, linewidth=1.4)
-
-    if show_grid:
-        ax.grid(True, linestyle="--", alpha=0.45)
-
-    if show_intercept:
-        ax.scatter([0], [c], s=160, zorder=5)
-        ax.annotate(
-            f"y-intercept: {c:g}",
-            xy=(0, c),
-            xytext=(1, c + 1),
-            arrowprops=dict(arrowstyle="->", lw=2),
-            fontsize=11,
-            bbox=dict(boxstyle="round,pad=0.35", fc="white", ec="gray", alpha=0.9)
-        )
+    fig.add_trace(go.Scatter(
+        x=x,
+        y=y,
+        mode="lines",
+        line=dict(width=5),
+        name=equation
+    ))
 
     if show_points:
         sample_x = np.array([-2, -1, 0, 1, 2])
         sample_y = m * sample_x + c
-        ax.scatter(sample_x, sample_y, s=75, zorder=4)
 
-        for px, py in zip(sample_x, sample_y):
-            if y_axis_min <= py <= y_axis_max and x_axis_min <= px <= x_axis_max:
-                ax.annotate(
-                    f"({px:g}, {py:g})",
-                    (px, py),
-                    textcoords="offset points",
-                    xytext=(8, 8),
-                    fontsize=10
-                )
+        fig.add_trace(go.Scatter(
+            x=sample_x,
+            y=sample_y,
+            mode="markers+text",
+            text=[f"({px:g}, {py:g})" for px, py in zip(sample_x, sample_y)],
+            textposition="top center",
+            marker=dict(size=10),
+            name="Sample points"
+        ))
 
-    ax.set_xlim(x_axis_min, x_axis_max)
-    ax.set_ylim(y_axis_min, y_axis_max)
+    if show_intercept:
+        fig.add_trace(go.Scatter(
+            x=[0],
+            y=[c],
+            mode="markers+text",
+            text=[f"y-intercept = {c:g}"],
+            textposition="top right",
+            marker=dict(size=16),
+            name="Y-intercept"
+        ))
 
-    ax.set_title("Live Straight Line Graph", fontsize=20, fontweight="bold")
-    ax.set_xlabel("x-axis", fontsize=13)
-    ax.set_ylabel("y-axis", fontsize=13)
-    ax.legend(fontsize=12)
+    fig.add_hline(y=0, line_width=2)
+    fig.add_vline(x=0, line_width=2)
 
-    st.pyplot(fig, clear_figure=True)
+    fig.update_layout(
+        height=760,
+        title=dict(
+            text="Live Straight Line Graph",
+            font=dict(size=26),
+            x=0.5
+        ),
+        xaxis=dict(
+            title="x-axis",
+            range=[x_axis_min, x_axis_max],
+            showgrid=show_grid,
+            zeroline=False
+        ),
+        yaxis=dict(
+            title="y-axis",
+            range=[y_axis_min, y_axis_max],
+            showgrid=show_grid,
+            zeroline=False
+        ),
+        margin=dict(l=40, r=30, t=70, b=40),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="center",
+            x=0.5
+        )
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={
+            "displayModeBar": True,
+            "scrollZoom": True
+        }
+    )
 
 with right:
     st.markdown(f"""
     <div class="equation-box">
-        <div class="small-note">Current straight line equation</div>
+        <div class="small-note">Current equation</div>
         <div class="equation-line">{equation}</div>
     </div>
     """, unsafe_allow_html=True)
@@ -184,30 +224,3 @@ with right:
         <p><b>Y-axis:</b> {y_axis_min} to {y_axis_max}</p>
     </div>
     """, unsafe_allow_html=True)
-
-    if m > 0:
-        direction = "The line rises from left to right."
-    elif m < 0:
-        direction = "The line falls from left to right."
-    else:
-        direction = "The line is horizontal."
-
-    st.markdown(f"""
-    <div class="card">
-        <h3>🧠 What changed?</h3>
-        <p>{direction}</p>
-        <p>The bigger the size of <b>m</b>, the steeper the line becomes.</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-st.markdown("""
-<div class="card">
-<h2>🎯 Student Task</h2>
-<p>Adjust the gradient and y-intercept to create:</p>
-<ol>
-<li>A line that rises and crosses the y-axis at 3.</li>
-<li>A line that falls and crosses the y-axis at -2.</li>
-<li>A horizontal line that crosses the y-axis at 5.</li>
-</ol>
-</div>
-""", unsafe_allow_html=True)
